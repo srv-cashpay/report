@@ -1,7 +1,6 @@
-version: '3.9'
+version: '3.1'
 
 services:
-
   api_report:
     restart: always
     container_name: api_report
@@ -12,42 +11,15 @@ services:
     tty: true
     volumes:
       - .:/app
+      - /opt/certs:/certs:ro    # Sertifikat HTTPS dimount read-only
+
     ports:
-      - 2306:2345
-    depends_on:
-      - db
+      - 2366:2345
     networks:
-      - local
+      - shared_network
+    env_file:
+      - .env
 
-  db:
-    container_name: db_report
-    image: postgres:14-alpine 
-    environment: 
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-    volumes: 
-      - db_data:/var/lib/postgresql
-    ports:
-      - "5441:5432"
-    networks:
-      - local
-
-  elasticsearch:
-    image: 'docker.elastic.co/elasticsearch/elasticsearch:7.13.3'
-    container_name: elasticsearchreport
-    environment:
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9600:9200"
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
-
-volumes:
-    db_data:
-    esdata:
-      driver: local
 networks:
-  local:
-    driver: bridge
+  shared_network:
+    external: true
