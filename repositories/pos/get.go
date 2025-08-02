@@ -1,6 +1,7 @@
 package pos
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/srv-cashpay/report/dto"
@@ -9,39 +10,45 @@ import (
 func (r *rposRepository) GetReport(start, end time.Time, filter, status string) ([]dto.DailyReportResponse, error) {
 	var reports []dto.DailyReportResponse
 
+	// Tentukan grouping berdasarkan filter
 	var groupBy string
 	switch filter {
 	case "weekly":
-		groupBy = "TO_CHAR(created_at, 'IYYY-IW')"
+		groupBy = "TO_CHAR(created_at, 'IYYY-IW')" // ISO week: e.g., "2025-31"
 	case "monthly":
-		groupBy = "TO_CHAR(created_at, 'YYYY-MM')"
+		groupBy = "TO_CHAR(created_at, 'YYYY-MM')" // e.g., "2025-08"
 	case "yearly":
-		groupBy = "TO_CHAR(created_at, 'YYYY')"
+		groupBy = "EXTRACT(YEAR FROM created_at)::text"
 	default:
-		groupBy = "DATE(created_at)"
+		groupBy = "TO_CHAR(created_at, 'YYYY-MM-DD')" // daily default
 	}
 
-	query := `
+	// SQL query dinamis
+	query := fmt.Sprintf(`
 		SELECT 
-			` + groupBy + ` AS date,
+			%s AS date,
 			COUNT(*) AS total_transaction,
-			SUM(pay) AS total_income
+			COALESCE(SUM(CASE WHEN status_payment = 'Paid' THEN pay ELSE 0 END), 0) AS paid,
+			COALESCE(SUM(CASE WHEN status_payment = 'Unpaid' THEN pay ELSE 0 END), 0) AS unpaid,
+			COALESCE(SUM(pay), 0) AS total_income
 		FROM pos
-		WHERE DATE(created_at) BETWEEN ? AND ?
+		WHERE created_at BETWEEN ? AND ?
 			AND deleted_at IS NULL
-	`
+	`, groupBy)
 
-	args := []interface{}{start.Format("2006-01-02"), end.Format("2006-01-02")}
+	// Tambahkan filter status jika ada
+	var args []interface{}
+	args = append(args, start, end)
 
 	if status != "" {
 		query += " AND status_payment = ?"
 		args = append(args, status)
 	}
 
-	query += " GROUP BY " + groupBy + " ORDER BY " + groupBy
+	query += fmt.Sprintf(" GROUP BY %s ORDER BY %s", groupBy, groupBy)
 
-	err := r.DB.Raw(query, args...).Scan(&reports).Error
-	if err != nil {
+	// Eksekusi query
+	if err := r.DB.Raw(query, args...).Scan(&reports).Error; err != nil {
 		return nil, err
 	}
 

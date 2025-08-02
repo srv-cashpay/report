@@ -8,9 +8,9 @@ type ReportFilterRequest struct {
 }
 
 type DailyReportResponse struct {
-	Date             string `json:"date" gorm:"column:date"`
-	TotalTransaction int    `json:"totalTransaction" gorm:"column:total_transaction"`
-	TotalIncome      int64  `json:"totalIncome" gorm:"column:total_income"`
+	Date             string `json:"date"`
+	TotalTransaction int    `json:"totalTransaction"`
 	Paid             int    `json:"paid"`
 	Unpaid           int    `json:"unpaid"`
+	TotalIncome      int    `json:"totalIncome"`
 }
