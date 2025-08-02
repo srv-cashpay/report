@@ -18,7 +18,7 @@ func (r *rposRepository) GetReport(start, end time.Time) ([]dto.DailyReportRespo
 			FROM pos
 			WHERE DATE(created_at) BETWEEN ? AND ? 
 				AND deleted_at IS NULL
-				AND status_payment = 'PAID'
+				AND status_payment = 'Paid'
 			GROUP BY DATE(created_at)
 			ORDER BY DATE(created_at)
 		`, start.Format("2006-01-02"), end.Format("2006-01-02")).
