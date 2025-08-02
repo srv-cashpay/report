@@ -23,9 +23,9 @@ func New() *echo.Echo {
 
 	e := echo.New()
 
-	logout := e.Group("api/logout")
+	logout := e.Group("api/report")
 	{
-		logout.POST("", posH.Get)
+		logout.GET("/pos", posH.Get)
 	}
 	return e
 }
