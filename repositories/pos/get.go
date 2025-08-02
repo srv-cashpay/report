@@ -15,7 +15,7 @@ func (r *rposRepository) GetReport(start, end time.Time) ([]dto.DailyReportRespo
 				DATE(created_at) as date, 
 				COUNT(*) as total_transaction, 
 				SUM(amount) as total_income
-			FROM transactions
+			FROM pos
 			WHERE DATE(created_at) BETWEEN ? AND ?
 			GROUP BY DATE(created_at)
 			ORDER BY DATE(created_at)
