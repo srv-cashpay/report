@@ -14,7 +14,7 @@ import (
 // 	return s.Repo.GetReport(start, end)
 // }
 
-func (s *rposService) GetFilteredReport(start, end time.Time, filter string) ([]dto.DailyReportResponse, error) {
-	return s.Repo.GetReport(start, end, filter)
+func (s *rposService) GetFilteredReport(start, end time.Time, filter, status string) ([]dto.DailyReportResponse, error) {
+	return s.Repo.GetReport(start, end, filter, status)
 
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type DomainRepository interface {
-	GetReport(start, end time.Time, rangeType string) ([]dto.DailyReportResponse, error)
+	GetReport(start, end time.Time, filter, status string) ([]dto.DailyReportResponse, error)
 }
 
 type rposRepository struct {

@@ -4,6 +4,7 @@ type ReportFilterRequest struct {
 	StartDate string `query:"start_date"`
 	EndDate   string `query:"end_date"`
 	Filter    string `query:"filter"`
+	Status    string `query:"status"` // tambah ini
 }
 
 type DailyReportResponse struct {
