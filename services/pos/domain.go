@@ -1,6 +1,8 @@
 package pos
 
 import (
+	"time"
+
 	m "github.com/srv-cashpay/middlewares/middlewares"
 
 	"github.com/srv-cashpay/report/dto"
@@ -8,7 +10,7 @@ import (
 )
 
 type RposService interface {
-	GetFilteredReport(filter dto.ReportFilterRequest) ([]dto.DailyReportResponse, error)
+	GetFilteredReport(start, end time.Time, filter string) ([]dto.DailyReportResponse, error)
 }
 
 type rposService struct {
