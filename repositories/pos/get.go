@@ -38,6 +38,7 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status string) 
 		FROM pos
 		WHERE created_at BETWEEN ? AND ?
 			AND deleted_at IS NULL
+					AND merchant_id = ?
 	`, groupExpr)
 
 	args := []interface{}{start, end}

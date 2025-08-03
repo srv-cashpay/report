@@ -4,12 +4,27 @@ import (
 	"net/http"
 	"time"
 
+	res "github.com/srv-cashpay/util/s/response"
+
 	"github.com/labstack/echo/v4"
 	"github.com/srv-cashpay/report/dto"
 )
 
 func (h *domainHandler) Get(c echo.Context) error {
 	var req dto.ReportFilterRequest
+
+	userid, ok := c.Get("UserId").(string)
+	if !ok {
+		return res.ErrorBuilder(&res.ErrorConstant.InternalServerError, nil).Send(c)
+	}
+
+	merchantId, ok := c.Get("MerchantId").(string)
+	if !ok {
+		return res.ErrorBuilder(&res.ErrorConstant.InternalServerError, nil).Send(c)
+	}
+
+	req.MerchantID = merchantId
+	req.UserID = userid
 
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request params")

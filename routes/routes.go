@@ -23,9 +23,9 @@ func New() *echo.Echo {
 
 	e := echo.New()
 
-	logout := e.Group("api/report")
+	report := e.Group("api/report", middlewares.AuthorizeJWT(JWT))
 	{
-		logout.GET("/pos", posH.Get)
+		report.GET("/pos", posH.Get)
 	}
 	return e
 }

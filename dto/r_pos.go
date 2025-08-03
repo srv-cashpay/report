@@ -1,10 +1,12 @@
 package dto
 
 type ReportFilterRequest struct {
-	StartDate string `query:"start_date"`
-	EndDate   string `query:"end_date"`
-	Filter    string `query:"filter"`
-	Status    string `query:"status"` // tambah ini
+	StartDate  string `query:"start_date"`
+	EndDate    string `query:"end_date"`
+	Filter     string `query:"filter"`
+	Status     string `query:"status"`
+	MerchantID string `json:"merchant_id"`
+	UserID     string `json:"user_id"`
 }
 
 type DailyReportResponse struct {
