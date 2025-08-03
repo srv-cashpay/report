@@ -17,29 +17,27 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 		MerchantID       string
 	}
 
-	var groupExpr string
-	switch filter {
-	case "weekly":
-		groupExpr = "DATE_TRUNC('week', created_at)"
-	case "monthly":
-		groupExpr = "DATE_TRUNC('month', created_at)"
-	case "yearly":
-		groupExpr = "DATE_TRUNC('year', created_at)"
-	default:
-		groupExpr = "DATE_TRUNC('day', created_at)"
-	}
+	// Load zona waktu WIB (Asia/Jakarta)
+	loc, _ := time.LoadLocation("Asia/Jakarta")
 
-	// --- Set zona waktu Asia/Jakarta (WIB) ---
-	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
-		return nil, fmt.Errorf("failed to load timezone: %w", err)
-	}
-
-	// Set waktu awal & akhir secara eksplisit
+	// Normalisasi waktu ke WIB
 	startDate := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, loc)
 	endDate := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, loc)
 
-	// Gunakan >= dan <=, hindari BETWEEN
+	// Ekspresi group by berdasarkan filter, dipaksa ke zona waktu Asia/Jakarta di SQL
+	var groupExpr string
+	switch filter {
+	case "weekly":
+		groupExpr = "DATE_TRUNC('week', created_at AT TIME ZONE 'Asia/Jakarta')"
+	case "monthly":
+		groupExpr = "DATE_TRUNC('month', created_at AT TIME ZONE 'Asia/Jakarta')"
+	case "yearly":
+		groupExpr = "DATE_TRUNC('year', created_at AT TIME ZONE 'Asia/Jakarta')"
+	default:
+		groupExpr = "DATE_TRUNC('day', created_at AT TIME ZONE 'Asia/Jakarta')"
+	}
+
+	// Gunakan >= dan <= agar waktu akurat
 	query := fmt.Sprintf(`
 		SELECT 
 			%s AS group_date,
@@ -49,7 +47,7 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 			COALESCE(SUM(pay), 0) AS total_income,
 			merchant_id
 		FROM pos
-		WHERE created_at >= ? AND created_at <= ?
+		WHERE created_at AT TIME ZONE 'Asia/Jakarta' >= ? AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
 			AND deleted_at IS NULL
 			AND merchant_id = ?
 	`, groupExpr)
@@ -73,27 +71,29 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 
 		switch filter {
 		case "weekly":
-			start := row.GroupDate
+			start := row.GroupDate.In(loc)
 			end := start.AddDate(0, 0, 6)
 			label = fmt.Sprintf("%s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))
 			startDateStr = start.Format("2006-01-02")
 			endDateStr = end.Format("2006-01-02")
 		case "monthly":
-			year, month, _ := row.GroupDate.Date()
+			year, month, _ := row.GroupDate.In(loc).Date()
 			start := time.Date(year, month, 1, 0, 0, 0, 0, loc)
 			end := start.AddDate(0, 1, -1)
 			label = fmt.Sprintf("%s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))
 			startDateStr = start.Format("2006-01-02")
 			endDateStr = end.Format("2006-01-02")
 		case "yearly":
-			year := row.GroupDate.Year()
+			year := row.GroupDate.In(loc).Year()
 			start := time.Date(year, 1, 1, 0, 0, 0, 0, loc)
 			end := time.Date(year, 12, 31, 0, 0, 0, 0, loc)
 			label = fmt.Sprintf("%d", year)
 			startDateStr = start.Format("2006-01-02")
 			endDateStr = end.Format("2006-01-02")
 		default:
-			label = row.GroupDate.Format("2006-01-02")
+			// daily
+			groupDate := row.GroupDate.In(loc)
+			label = groupDate.Format("2006-01-02")
 			startDateStr = label
 			endDateStr = label
 		}
