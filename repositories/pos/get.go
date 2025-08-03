@@ -35,11 +35,12 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 			COUNT(*) AS total_transaction,
 			COALESCE(SUM(CASE WHEN status_payment = 'Paid' THEN pay ELSE 0 END), 0) AS paid,
 			COALESCE(SUM(CASE WHEN status_payment = 'Unpaid' THEN pay ELSE 0 END), 0) AS unpaid,
-			COALESCE(SUM(pay), 0) AS total_income
+			COALESCE(SUM(pay), 0) AS total_income,
+			merchant_id
 		FROM pos
 		WHERE created_at BETWEEN ? AND ?
 			AND deleted_at IS NULL
-					AND merchant_id = ?
+			AND merchant_id = ?
 	`, groupExpr)
 
 	args := []interface{}{start, end, merchantID}
@@ -49,7 +50,8 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 		args = append(args, status)
 	}
 
-	query += " GROUP BY group_date ORDER BY group_date"
+	// Perlu group by merchant_id karena sekarang diseleksi juga
+	query += " GROUP BY group_date, merchant_id ORDER BY group_date"
 
 	if err := r.DB.Raw(query, args...).Scan(&rows).Error; err != nil {
 		return nil, err
