@@ -29,6 +29,17 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 		groupExpr = "DATE_TRUNC('day', created_at)"
 	}
 
+	// --- Set zona waktu Asia/Jakarta (WIB) ---
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load timezone: %w", err)
+	}
+
+	// Set waktu awal & akhir secara eksplisit
+	startDate := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, loc)
+	endDate := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, loc)
+
+	// Gunakan >= dan <=, hindari BETWEEN
 	query := fmt.Sprintf(`
 		SELECT 
 			%s AS group_date,
@@ -38,19 +49,18 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 			COALESCE(SUM(pay), 0) AS total_income,
 			merchant_id
 		FROM pos
-		WHERE created_at BETWEEN ? AND ?
+		WHERE created_at >= ? AND created_at <= ?
 			AND deleted_at IS NULL
 			AND merchant_id = ?
 	`, groupExpr)
 
-	args := []interface{}{start, end, merchantID}
+	args := []interface{}{startDate, endDate, merchantID}
 
 	if status != "" {
 		query += " AND status_payment = ?"
 		args = append(args, status)
 	}
 
-	// Perlu group by merchant_id karena sekarang diseleksi juga
 	query += " GROUP BY group_date, merchant_id ORDER BY group_date"
 
 	if err := r.DB.Raw(query, args...).Scan(&rows).Error; err != nil {
@@ -59,39 +69,39 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 
 	var result []dto.DailyReportResponse
 	for _, row := range rows {
-		var label, startDate, endDate string
+		var label, startDateStr, endDateStr string
 
 		switch filter {
 		case "weekly":
 			start := row.GroupDate
 			end := start.AddDate(0, 0, 6)
 			label = fmt.Sprintf("%s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))
-			startDate = start.Format("2006-01-02")
-			endDate = end.Format("2006-01-02")
+			startDateStr = start.Format("2006-01-02")
+			endDateStr = end.Format("2006-01-02")
 		case "monthly":
 			year, month, _ := row.GroupDate.Date()
-			start := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+			start := time.Date(year, month, 1, 0, 0, 0, 0, loc)
 			end := start.AddDate(0, 1, -1)
 			label = fmt.Sprintf("%s to %s", start.Format("2006-01-02"), end.Format("2006-01-02"))
-			startDate = start.Format("2006-01-02")
-			endDate = end.Format("2006-01-02")
+			startDateStr = start.Format("2006-01-02")
+			endDateStr = end.Format("2006-01-02")
 		case "yearly":
 			year := row.GroupDate.Year()
-			start := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
-			end := time.Date(year, 12, 31, 0, 0, 0, 0, time.UTC)
+			start := time.Date(year, 1, 1, 0, 0, 0, 0, loc)
+			end := time.Date(year, 12, 31, 0, 0, 0, 0, loc)
 			label = fmt.Sprintf("%d", year)
-			startDate = start.Format("2006-01-02")
-			endDate = end.Format("2006-01-02")
-		default: // daily
+			startDateStr = start.Format("2006-01-02")
+			endDateStr = end.Format("2006-01-02")
+		default:
 			label = row.GroupDate.Format("2006-01-02")
-			startDate = label
-			endDate = label
+			startDateStr = label
+			endDateStr = label
 		}
 
 		result = append(result, dto.DailyReportResponse{
 			Label:            label,
-			StartDate:        startDate,
-			EndDate:          endDate,
+			StartDate:        startDateStr,
+			EndDate:          endDateStr,
 			TotalTransaction: row.TotalTransaction,
 			Paid:             row.Paid,
 			Unpaid:           row.Unpaid,
