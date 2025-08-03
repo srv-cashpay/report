@@ -44,7 +44,7 @@ func (h *domainHandler) Get(c echo.Context) error {
 		req.Filter = "daily"
 	}
 
-	data, err := h.serviceRpos.GetFilteredReport(start, end, req.Filter, req.Status) // <== tambah req.Status
+	data, err := h.serviceRpos.GetFilteredReport(start, end, req.Filter, req.Status, req.MerchantID) // <== tambah req.Status
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
