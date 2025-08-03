@@ -17,4 +17,5 @@ type DailyReportResponse struct {
 	Paid             float64 `json:"paid"`
 	Unpaid           float64 `json:"unpaid"`
 	TotalIncome      float64 `json:"totalIncome"`
+	MerchantID       string  `json:"merchant_id"`
 }

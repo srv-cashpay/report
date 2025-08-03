@@ -14,6 +14,7 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 		Paid             float64
 		Unpaid           float64
 		TotalIncome      float64
+		MerchantID       string
 	}
 
 	var groupExpr string
@@ -93,6 +94,7 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 			Paid:             row.Paid,
 			Unpaid:           row.Unpaid,
 			TotalIncome:      row.TotalIncome,
+			MerchantID:       row.MerchantID,
 		})
 	}
 
