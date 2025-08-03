@@ -23,9 +23,6 @@ func (h *domainHandler) Get(c echo.Context) error {
 
 	}
 
-	req.MerchantID = merchantId
-	req.UserID = userid
-
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request params")
 	}
@@ -43,6 +40,9 @@ func (h *domainHandler) Get(c echo.Context) error {
 	if req.Filter == "" {
 		req.Filter = "daily"
 	}
+
+	req.MerchantID = merchantId
+	req.UserID = userid
 
 	data, err := h.serviceRpos.GetFilteredReport(start, end, req.Filter, req.Status, req.MerchantID) // <== tambah req.Status
 	if err != nil {

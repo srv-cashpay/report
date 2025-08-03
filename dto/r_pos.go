@@ -5,8 +5,8 @@ type ReportFilterRequest struct {
 	EndDate    string `query:"end_date"`
 	Filter     string `query:"filter"`
 	Status     string `query:"status"`
-	MerchantID string `json:"merchant_id"`
-	UserID     string `json:"user_id"`
+	MerchantID string `json:"-"`
+	UserID     string `json:"-"`
 }
 
 type DailyReportResponse struct {
