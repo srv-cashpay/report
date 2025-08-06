@@ -44,9 +44,9 @@ func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchan
 			COUNT(*) AS total_transaction,
 			COALESCE(SUM(CASE WHEN status_payment = 'Paid' THEN pay ELSE 0 END), 0) AS paid,
 			COALESCE(SUM(CASE WHEN status_payment = 'Unpaid' THEN 
-				(SELECT SUM( (elem->>'price')::numeric * (elem->>'quantity')::int ) 
-				FROM jsonb_array_elements(products) AS elem)
-			ELSE 0 END), 0) AS unpaid,
+			(SELECT SUM((elem->>'price')::numeric * (elem->>'quantity')::int)
+			 FROM jsonb_array_elements(products::jsonb) AS elem)
+		ELSE 0 END), 0) AS unpaid,
 			COALESCE(SUM(pay), 0) AS total_income,
 			merchant_id
 		FROM pos
