@@ -17,14 +17,10 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 		MerchantID       string
 	}
 
-	// Load zona waktu WIB (Asia/Jakarta)
 	loc, _ := time.LoadLocation("Asia/Jakarta")
-
-	// Normalisasi waktu ke WIB
 	startDate := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, loc)
 	endDate := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, loc)
 
-	// Ekspresi group by berdasarkan filter, dipaksa ke zona waktu Asia/Jakarta di SQL
 	var groupExpr string
 	switch filter {
 	case "weekly":
@@ -37,21 +33,17 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 		groupExpr = "DATE_TRUNC('day', created_at AT TIME ZONE 'Asia/Jakarta')"
 	}
 
-	// Gunakan >= dan <= agar waktu akurat
 	query := fmt.Sprintf(`
 		SELECT 
 			%s AS group_date,
 			COUNT(*) AS total_transaction,
 			COALESCE(SUM(CASE WHEN status_payment = 'Paid' THEN pay ELSE 0 END), 0) AS paid,
 			COALESCE(SUM(CASE WHEN status_payment = 'Unpaid' THEN pay ELSE 0 END), 0) AS unpaid,
-			COALESCE(SUM(CASE WHEN status_payment = 'Unpaid' THEN 
-				(SELECT SUM( (elem->>'price')::numeric * (elem->>'quantity')::int ) 
-				FROM jsonb_array_elements(products) AS elem)
-			ELSE 0 END), 0) AS unpaid,
 			COALESCE(SUM(pay), 0) AS total_income,
 			merchant_id
-		FROM product
-		WHERE created_at AT TIME ZONE 'Asia/Jakarta' >= ? AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
+		FROM pos
+		WHERE created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
+			AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
 			AND deleted_at IS NULL
 			AND merchant_id = ?
 	`, groupExpr)
@@ -66,6 +58,25 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 	query += " GROUP BY group_date, merchant_id ORDER BY group_date"
 
 	if err := r.DB.Raw(query, args...).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	var bestSellers []dto.BestSeller
+	if err := r.DB.Raw(`
+		SELECT 
+			(jsonb_data->>'product_name') AS product_name,
+			SUM((jsonb_data->>'quantity')::int) AS total_qty
+		FROM pos,
+		LATERAL jsonb_array_elements(product) AS jsonb_data
+		WHERE merchant_id = ? 
+			AND status_payment = 'Paid'
+			AND created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
+			AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
+			AND deleted_at IS NULL
+		GROUP BY product_name
+		ORDER BY total_qty DESC
+		LIMIT 10
+	`, merchantID, startDate, endDate).Scan(&bestSellers).Error; err != nil {
 		return nil, err
 	}
 
@@ -95,7 +106,6 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 			startDateStr = start.Format("2006-01-02")
 			endDateStr = end.Format("2006-01-02")
 		default:
-			// daily
 			groupDate := row.GroupDate.In(loc)
 			label = groupDate.Format("2006-01-02")
 			startDateStr = label
@@ -111,6 +121,7 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 			Unpaid:           row.Unpaid,
 			TotalIncome:      row.TotalIncome,
 			MerchantID:       row.MerchantID,
+			BestSellers:      bestSellers, // ← tambahkan ini di DTO
 		})
 	}
 
