@@ -67,7 +67,7 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 			(jsonb_data->>'product_name') AS product_name,
 			SUM((jsonb_data->>'quantity')::int) AS total_qty
 		FROM pos,
-		LATERAL jsonb_array_elements(product) AS jsonb_data
+		LATERAL json_array_elements(product) AS json_data
 		WHERE merchant_id = ? 
 			AND status_payment = 'Paid'
 			AND created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
