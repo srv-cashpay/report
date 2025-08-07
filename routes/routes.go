@@ -8,6 +8,10 @@ import (
 	h_pos "github.com/srv-cashpay/report/handlers/pos"
 	r_pos "github.com/srv-cashpay/report/repositories/pos"
 	s_pos "github.com/srv-cashpay/report/services/pos"
+
+	h_product_best "github.com/srv-cashpay/report/handlers/product"
+	r_product_best "github.com/srv-cashpay/report/repositories/product"
+	s_product_best "github.com/srv-cashpay/report/services/product"
 )
 
 var (
@@ -17,6 +21,10 @@ var (
 	posR = r_pos.NewrposRepository(DB)
 	posS = s_pos.NewRposService(posR, JWT)
 	posH = h_pos.NewRposHandler(posS)
+
+	product_bestR = r_product_best.NewrproductReproductitory(DB)
+	product_bestS = s_product_best.NewRproductService(product_bestR, JWT)
+	product_bestH = h_product_best.NewRproductHandler(product_bestS)
 )
 
 func New() *echo.Echo {
@@ -26,7 +34,7 @@ func New() *echo.Echo {
 	report := e.Group("api/report", middlewares.AuthorizeJWT(JWT))
 	{
 		report.GET("/pos", posH.Get)
-		report.GET("/product", posH.Get)
+		report.GET("/product_best", product_bestH.Get)
 	}
 	return e
 }
