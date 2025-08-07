@@ -63,19 +63,19 @@ func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status,
 
 	var bestSellers []dto.BestSeller
 	if err := r.DB.Raw(`
-		SELECT 
-			(jsonb_data->>'product_name') AS product_name,
-			SUM((jsonb_data->>'quantity')::int) AS total_qty
-		FROM pos,
-		LATERAL json_array_elements(product) AS json_data
-		WHERE merchant_id = ? 
-			AND status_payment = 'Paid'
-			AND created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
-			AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
-			AND deleted_at IS NULL
-		GROUP BY product_name
-		ORDER BY total_qty DESC
-		LIMIT 10
+SELECT 
+  (json_data->>'product_name') AS product_name,
+  SUM((json_data->>'quantity')::int) AS total_qty
+FROM pos,
+LATERAL jsonb_array_elements(product) AS json_data
+WHERE merchant_id = ?
+  AND status_payment = 'Paid'
+  AND created_at AT TIME ZONE 'Asia/Jakarta' >= ?
+  AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
+  AND deleted_at IS NULL
+GROUP BY product_name
+ORDER BY total_qty DESC
+LIMIT 10
 	`, merchantID, startDate, endDate).Scan(&bestSellers).Error; err != nil {
 		return nil, err
 	}
