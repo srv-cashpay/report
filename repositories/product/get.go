@@ -67,7 +67,7 @@ SELECT
   (json_data->>'product_name') AS product_name,
   SUM((json_data->>'quantity')::int) AS total_qty
 FROM pos,
-LATERAL jsonb_array_elements(product) AS json_data
+LATERAL json_array_elements(product::json) AS json_data
 WHERE merchant_id = ?
   AND status_payment = 'Paid'
   AND created_at AT TIME ZONE 'Asia/Jakarta' >= ?
@@ -76,10 +76,9 @@ WHERE merchant_id = ?
 GROUP BY product_name
 ORDER BY total_qty DESC
 LIMIT 10
-	`, merchantID, startDate, endDate).Scan(&bestSellers).Error; err != nil {
+`, merchantID, startDate, endDate).Scan(&bestSellers).Error; err != nil {
 		return nil, err
 	}
-
 	var result []dto.DailyReportResponse
 	for _, row := range rows {
 		var label, startDateStr, endDateStr string
