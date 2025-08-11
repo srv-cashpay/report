@@ -106,6 +106,7 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 
 		// Ambil semua produk pada periode ini
 		var products []dto.ProductItem
+
 		productQuery := `
 			SELECT 
 				elem->>'product_id' AS product_id,
@@ -114,12 +115,17 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 				(elem->>'price')::numeric AS price
 			FROM pos,
 			jsonb_array_elements(product::jsonb) AS elem
-			WHERE merchant_id = ?
-			AND created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
+			WHERE created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
 			AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
 			AND deleted_at IS NULL
+			AND merchant_id = ?
 		`
-		if err := r.DB.Raw(productQuery, row.MerchantID, startDateStr, endDateStr).Scan(&products).Error; err != nil {
+
+		// Gunakan time.Time dengan jam penuh, bukan string
+		startTime, _ := time.ParseInLocation("2006-01-02 15:04:05", startDateStr+" 00:00:00", loc)
+		endTime, _ := time.ParseInLocation("2006-01-02 15:04:05", endDateStr+" 23:59:59", loc)
+
+		if err := r.DB.Raw(productQuery, startTime, endTime, row.MerchantID).Scan(&products).Error; err != nil {
 			return nil, err
 		}
 
