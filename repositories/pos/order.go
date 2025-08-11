@@ -79,7 +79,7 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 	var result []dto.DailyReportResponse
 	for _, row := range rows {
 		var label, startDateStr, endDateStr string
-
+		var products []dto.ProductItem
 		switch filter {
 		case "weekly":
 			start := row.GroupDate.In(loc)
@@ -118,6 +118,7 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 			Unpaid:           row.Unpaid,
 			TotalIncome:      row.TotalIncome,
 			MerchantID:       row.MerchantID,
+			Products:         products,
 		})
 	}
 
