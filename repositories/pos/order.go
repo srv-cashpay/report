@@ -17,14 +17,10 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 		MerchantID       string
 	}
 
-	// Load zona waktu WIB (Asia/Jakarta)
 	loc, _ := time.LoadLocation("Asia/Jakarta")
-
-	// Normalisasi waktu ke WIB
 	startDate := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, loc)
 	endDate := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 0, loc)
 
-	// Ekspresi group by berdasarkan filter, dipaksa ke zona waktu Asia/Jakarta di SQL
 	var groupExpr string
 	switch filter {
 	case "weekly":
@@ -37,34 +33,33 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 		groupExpr = "DATE_TRUNC('day', created_at AT TIME ZONE 'Asia/Jakarta')"
 	}
 
-	// Gunakan >= dan <= agar waktu akurat
 	query := fmt.Sprintf(`
 		SELECT 
 			%s AS group_date,
 			COUNT(*) AS total_transaction,
 			COALESCE(SUM(CASE WHEN status_payment = 'Paid' THEN pay ELSE 0 END), 0) AS paid,
 			COALESCE(SUM(
-			CASE 
-				WHEN status_payment = 'Unpaid' THEN (
-					SELECT SUM(
-						(COALESCE((elem->>'price')::numeric, 0)) * 
-						(COALESCE((elem->>'quantity')::int, 0))
+				CASE 
+					WHEN status_payment = 'Unpaid' THEN (
+						SELECT SUM(
+							(COALESCE((elem->>'price')::numeric, 0)) * 
+							(COALESCE((elem->>'quantity')::int, 0))
+						)
+						FROM jsonb_array_elements(product::jsonb) AS elem
 					)
-					FROM jsonb_array_elements(product::jsonb) AS elem
-				)
-				ELSE 0
-			END
-		), 0) AS unpaid,
+					ELSE 0
+				END
+			), 0) AS unpaid,
 			COALESCE(SUM(pay), 0) AS total_income,
 			merchant_id
 		FROM pos
-		WHERE created_at AT TIME ZONE 'Asia/Jakarta' >= ? AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
+		WHERE created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
+			AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
 			AND deleted_at IS NULL
 			AND merchant_id = ?
 	`, groupExpr)
 
 	args := []interface{}{startDate, endDate, merchantID}
-
 	if status != "" {
 		query += " AND status_payment = ?"
 		args = append(args, status)
@@ -79,7 +74,8 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 	var result []dto.DailyReportResponse
 	for _, row := range rows {
 		var label, startDateStr, endDateStr string
-		var products []dto.ProductItem
+
+		// Tentukan range tanggal per group
 		switch filter {
 		case "weekly":
 			start := row.GroupDate.In(loc)
@@ -102,13 +98,32 @@ func (r *rposRepository) Order(start, end time.Time, filter, status, merchantID 
 			startDateStr = start.Format("2006-01-02")
 			endDateStr = end.Format("2006-01-02")
 		default:
-			// daily
 			groupDate := row.GroupDate.In(loc)
 			label = groupDate.Format("2006-01-02")
 			startDateStr = label
 			endDateStr = label
 		}
 
+		// Ambil semua produk pada periode ini
+		var products []dto.ProductItem
+		productQuery := `
+			SELECT 
+				elem->>'product_id' AS product_id,
+				elem->>'product_name' AS product_name,
+				(elem->>'quantity')::int AS quantity,
+				(elem->>'price')::numeric AS price
+			FROM pos,
+			jsonb_array_elements(product::jsonb) AS elem
+			WHERE merchant_id = ?
+			AND created_at AT TIME ZONE 'Asia/Jakarta' >= ? 
+			AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
+			AND deleted_at IS NULL
+		`
+		if err := r.DB.Raw(productQuery, row.MerchantID, startDateStr, endDateStr).Scan(&products).Error; err != nil {
+			return nil, err
+		}
+
+		// Gabungkan ke hasil akhir
 		result = append(result, dto.DailyReportResponse{
 			Label:            label,
 			StartDate:        startDateStr,

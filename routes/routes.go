@@ -35,7 +35,7 @@ func New() *echo.Echo {
 	{
 		report.GET("/summary", posH.Summary)
 		report.GET("/order", posH.Order)
-		report.GET("/product_best", product_bestH.Get)
+		report.GET("/product_best", product_bestH.BestSeller)
 	}
 	return e
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type RproductService interface {
-	GetFilteredReport(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
+	BestSeller(start, end time.Time, filter, status, merchantID string) ([]dto.BestSellerResponse, error)
 }
 
 type rproductService struct {

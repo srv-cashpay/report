@@ -18,8 +18,19 @@ type DailyReportResponse struct {
 	Unpaid           float64       `json:"unpaid"`
 	TotalIncome      float64       `json:"totalIncome"`
 	MerchantID       string        `json:"merchant_id"`
-	BestSellers      []BestSeller  `json:"best_sellers"` // ← Tambahkan
 	Products         []ProductItem `json:"products"`
+}
+
+type BestSellerResponse struct {
+	Label            string       `json:"label"`      // e.g., "2025-07-08" or "2025-07-08 to 2025-07-14"
+	StartDate        string       `json:"start_date"` // optional, mostly for weekly
+	EndDate          string       `json:"end_date"`   // optional, mostly for weekly
+	TotalTransaction int          `json:"totalTransaction"`
+	Paid             float64      `json:"paid"`
+	Unpaid           float64      `json:"unpaid"`
+	TotalIncome      float64      `json:"totalIncome"`
+	MerchantID       string       `json:"merchant_id"`
+	BestSellers      []BestSeller `json:"best_sellers"` // ← Tambahkan
 }
 
 type BestSeller struct {

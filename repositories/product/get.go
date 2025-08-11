@@ -7,7 +7,7 @@ import (
 	"github.com/srv-cashpay/report/dto"
 )
 
-func (r *rproductReproductitory) GetReport(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error) {
+func (r *rproductReproductitory) BestSeller(start, end time.Time, filter, status, merchantID string) ([]dto.BestSellerResponse, error) {
 	var rows []struct {
 		GroupDate        time.Time
 		TotalTransaction int
@@ -79,7 +79,7 @@ LIMIT 10
 `, merchantID, startDate, endDate).Scan(&bestSellers).Error; err != nil {
 		return nil, err
 	}
-	var result []dto.DailyReportResponse
+	var result []dto.BestSellerResponse
 	for _, row := range rows {
 		var label, startDateStr, endDateStr string
 
@@ -111,7 +111,7 @@ LIMIT 10
 			endDateStr = label
 		}
 
-		result = append(result, dto.DailyReportResponse{
+		result = append(result, dto.BestSellerResponse{
 			Label:            label,
 			StartDate:        startDateStr,
 			EndDate:          endDateStr,

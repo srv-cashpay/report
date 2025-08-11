@@ -8,7 +8,7 @@ import (
 )
 
 type DomainReproductitory interface {
-	GetReport(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
+	BestSeller(start, end time.Time, filter, status, merchantID string) ([]dto.BestSellerResponse, error)
 }
 
 type rproductReproductitory struct {

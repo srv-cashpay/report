@@ -8,7 +8,7 @@ import (
 	"github.com/srv-cashpay/report/dto"
 )
 
-func (h *domainHandler) Get(c echo.Context) error {
+func (h *domainHandler) BestSeller(c echo.Context) error {
 	var req dto.ReportFilterRequest
 
 	userid, ok := c.Get("UserId").(string)
@@ -44,7 +44,7 @@ func (h *domainHandler) Get(c echo.Context) error {
 	req.MerchantID = merchantId
 	req.UserID = userid
 
-	data, err := h.serviceRproduct.GetFilteredReport(start, end, req.Filter, req.Status, req.MerchantID) // <== tambah req.Status
+	data, err := h.serviceRproduct.BestSeller(start, end, req.Filter, req.Status, req.MerchantID) // <== tambah req.Status
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
