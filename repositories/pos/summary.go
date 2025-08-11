@@ -7,7 +7,7 @@ import (
 	"github.com/srv-cashpay/report/dto"
 )
 
-func (r *rposRepository) GetReport(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error) {
+func (r *rposRepository) Summary(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error) {
 	var rows []struct {
 		GroupDate        time.Time
 		TotalTransaction int

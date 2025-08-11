@@ -8,7 +8,8 @@ import (
 )
 
 type DomainRepository interface {
-	GetReport(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
+	Summary(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
+	Order(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
 }
 
 type rposRepository struct {

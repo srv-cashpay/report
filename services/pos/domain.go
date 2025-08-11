@@ -10,7 +10,8 @@ import (
 )
 
 type RposService interface {
-	GetFilteredReport(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
+	Summary(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
+	Order(start, end time.Time, filter, status, merchantID string) ([]dto.DailyReportResponse, error)
 }
 
 type rposService struct {
