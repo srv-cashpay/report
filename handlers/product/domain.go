@@ -7,6 +7,7 @@ import (
 
 type DomainHandler interface {
 	BestSeller(c echo.Context) error
+	SlowMoving(c echo.Context) error
 }
 
 type domainHandler struct {

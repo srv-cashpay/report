@@ -9,6 +9,7 @@ import (
 
 type DomainReproductitory interface {
 	BestSeller(start, end time.Time, filter, status, merchantID string) ([]dto.BestSellerResponse, error)
+	SlowMoving(start, end time.Time, filter, status, merchantID string) ([]dto.BestSellerResponse, error)
 }
 
 type rproductReproductitory struct {

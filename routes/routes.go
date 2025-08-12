@@ -36,6 +36,8 @@ func New() *echo.Echo {
 		report.GET("/summary", posH.Summary)
 		report.GET("/order", posH.Order)
 		report.GET("/product_best", product_bestH.BestSeller)
+		report.GET("/slow_moving", product_bestH.SlowMoving)
+
 	}
 	return e
 }
