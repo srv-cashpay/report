@@ -74,7 +74,7 @@ WHERE merchant_id = ?
   AND created_at AT TIME ZONE 'Asia/Jakarta' <= ?
   AND deleted_at IS NULL
 GROUP BY product_name
-ORDER BY total_qty ACS
+ORDER BY total_qty ASC
 LIMIT 10
 `, merchantID, startDate, endDate).Scan(&bestSellers).Error; err != nil {
 		return nil, err
