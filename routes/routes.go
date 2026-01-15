@@ -31,7 +31,7 @@ func New() *echo.Echo {
 
 	e := echo.New()
 
-	report := e.Group("api/report", middlewares.AuthorizeJWT(JWT))
+	report := e.Group("/report", middlewares.AuthorizeJWT(JWT))
 	{
 		report.GET("/summary", posH.Summary)
 		report.GET("/order", posH.Order)
